@@ -1,0 +1,46 @@
+clear
+reset
+set key off
+set border 3
+set auto
+
+
+###########################################
+# Generate frequency plot of timing samples
+########################################### 
+
+set xrange[0:200000]
+unset xtics
+ 
+set title sprintf("TPM-UNBIND execution samples (n = %s)", system("cat sw_tpm_timings.txt | wc -l"))
+set xlabel "Timing Value"
+set ylabel "Frequency"
+ 
+set terminal png enhanced font arial 14 size 800, 600
+ft="png"
+# Set the output-file name.
+set output "timing_freqs.".ft
+ 
+set style histogram clustered gap 1
+set style fill solid border -1
+ 
+binwidth=50
+set boxwidth binwidth
+bin(x,width)=width*floor(x/width) + binwidth/2.0
+
+plot 'sw_tpm_timings.txt' using (bin($1,binwidth)):(1.0) smooth freq with boxes
+
+
+
+#########################################
+# Find the highest occurring timing value
+#########################################
+
+set table "temp_plot"
+plot 'sw_tpm_timings.txt' using (bin($1,binwidth)):(1.0) smooth freq
+unset table
+
+stat "temp_plot" u 1:(strcol(3) eq 'i'?$2:1/0) nooutput
+print STATS_max_y, STATS_pos_max_y
+
+
